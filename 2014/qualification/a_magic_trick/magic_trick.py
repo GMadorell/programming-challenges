@@ -31,8 +31,8 @@ class MagicTrickParser(JamParser):
     def parse(self):
         for index in range(0, len(self.data), 10):  # Iter for every different magic trick instance in input data file.
             instance = MagicTrickInstance()
-            instance.first_row = int(self.data[index])
-            instance.second_row = int(self.data[index + 5])
+            instance.first_row = int(self.data[index][0])
+            instance.second_row = int(self.data[index + 5][0])
 
             first_cards = []
             for first_hand_index in range(index + 1, index + 5):
@@ -48,8 +48,7 @@ class MagicTrickParser(JamParser):
 
     def parse_cards(self, index):
         cards_as_str = self.data[index]
-        split_cards = cards_as_str.split()
-        numeric_cards = map(lambda s: int(s), split_cards)
+        numeric_cards = map(lambda s: int(s), cards_as_str)
         return numeric_cards
 
 

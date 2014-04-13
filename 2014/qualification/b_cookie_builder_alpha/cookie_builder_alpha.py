@@ -52,8 +52,7 @@ class SuperCookieParser(JamParser):
     def parse(self):
         for row in self.data:
             instance = SuperCookieInstance()
-            splitted_row = row.split()
-            numeric_row = map(lambda s: float(s), splitted_row)
+            numeric_row = map(lambda s: float(s), row)
 
             instance.farm_cost = numeric_row[0]
             instance.farm_production = numeric_row[1]
