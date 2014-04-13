@@ -1,0 +1,36 @@
+
+"""
+Problem description.
+"""
+
+from __future__ import division
+from jam_utils.jam_parser import JamParser
+from jam_utils.jam_solver import JamSolver
+
+PATH_DATA = "data.txt"
+PATH_OUTPUT = PATH_DATA.split(".")[0] + ".out"  # Same name as path data, except for the file format.
+
+
+class {{ problem_class_name }}Instance(object):
+    def __init__(self):
+        pass
+
+
+class {{ problem_class_name }}Parser(JamParser):
+    def parse(self):
+        """
+        This method needs to fill the instances list.
+        """
+        for row in self.data:
+            pass
+
+
+class {{ problem_class_name }}Solver(JamSolver):
+    def solve_instance(self, instance):
+        pass
+
+
+if __name__ == "__main__":
+    parser = {{ problem_class_name }}Parser(PATH_DATA)
+    solver = {{ problem_class_name }}Solver(PATH_OUTPUT)
+    solver.solve(parser.instances)
