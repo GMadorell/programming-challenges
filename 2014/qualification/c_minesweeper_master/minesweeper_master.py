@@ -100,31 +100,13 @@ CLICK, MINE, CLEAN, NOT_POSSIBLE, NOTHING = range(5)
 
 
 class MinesweeperMasterSolver(JamSolver):
-    def fill_board_from_center_to_exterior(self, initial_col, initial_row, offset, spaces_to_fill):
-        pass
-
     def solve_instance(self, instance):
         rows = instance.rows
         cols = instance.columns
         mines = instance.mines
 
-        # Strategy:
-        #   Put all the mines at the lower-right part of the grid and click on top-left.
-
-
-        # Fill the mines
-
-
-        initial_row = rows // 2
-        initial_col = cols // 2
-
-        offset = -1
-
-        spaces_to_fill = rows * cols - mines
-
-        only_one_space = cols * rows - mines == 1
-
         # Solve the edge case in which you win simply by clicking.
+        only_one_space = cols * rows - mines == 1
         if only_one_space:
             board = [list() for _ in xrange(rows)]
             for row in board:
@@ -132,19 +114,70 @@ class MinesweeperMasterSolver(JamSolver):
             board[0][0] = NOTHING
             return self.format_solution_board(board)
 
+        board = self.fill_board_with_mines_from_bot_right_to_top_left(cols, mines, rows)
+        if self.is_one_click_win_possible(board, cols, mines, rows):
+            return self.format_solution_board(board)
+
+        board = self.fill_board_from_middle_to_borders(rows, cols, mines)
+        if self.is_one_click_win_possible(board, cols, mines, rows):
+            return self.format_solution_board(board)
+
+        board = self.fill_board_horizontally(rows, cols, mines)
+        if self.is_one_click_win_possible(board, cols, mines, rows):
+            return self.format_solution_board(board)
+
+        board = self.fill_board_vertically(rows, cols, mines)
+        if self.is_one_click_win_possible(board, cols, mines, rows):
+            return self.format_solution_board(board)
+
+        board = self.fill_board_expanding_from_bot_right(rows, cols, mines)
+        if self.is_one_click_win_possible(board, cols, mines, rows):
+            return self.format_solution_board(board)
+        else:
+            return "\nImpossible"
+
+    def fill_board_with_mines_from_bot_right_to_top_left(self, cols, mines, rows):
+        """
+        Puts mines starting from bottom-right to top-left.
+        """
         board = [list() for _ in xrange(rows)]
         for row in board:
             [row.append(NOTHING) for _ in range(cols)]
 
-        self.fill_board_with_mines(board, cols, mines, rows)
-        if self.is_one_click_win_possible(board, cols, mines, rows):
-            return self.format_solution_board(board)
+        planted_mines = 0
+        initial_row = rows
+        initial_col = cols - 1
 
+        while planted_mines < mines:
+
+            if initial_row > 0:
+                initial_row -= 1
+            else:
+                initial_col -= 1
+
+            row = initial_row
+            col = initial_col
+
+            while row < rows and col >= 0:
+                assert board[row][col] != MINE, \
+                    "Repetition - Tryed to put a mine in a cell in which a mine already existed."
+                board[row][col] = MINE
+                planted_mines += 1
+                row += 1
+                col -= 1
+                if planted_mines == mines:
+                    break
+        return board
+
+    def fill_board_from_middle_to_borders(self, rows, cols, mines):
         board = [list() for _ in xrange(rows)]
         for row in board:
             [row.append(MINE) for _ in range(cols)]
 
-        # If that fails, try to fill the board from the middle to the exterior of it.
+        spaces_to_fill = cols * rows - mines
+        initial_row = rows // 2
+        initial_col = cols // 2
+        offset = -1
         while self.count_cells(board, NOTHING) < spaces_to_fill:
 
             offset += 1
@@ -196,16 +229,14 @@ class MinesweeperMasterSolver(JamSolver):
                     if self.count_cells(board, NOTHING) == spaces_to_fill:
                         break
                     self.set_board_status(board, row, col, NOTHING)
-        if self.is_one_click_win_possible(board, cols, mines, rows):
-            return self.format_solution_board(board)
+        return board
 
-        i = 1
-
-        # If that fails, try filling the board horizontally.
+    def fill_board_horizontally(self, rows, cols, mines):
         board = [list() for _ in xrange(rows)]
         for row in board:
             [row.append(MINE) for _ in range(cols)]
 
+        spaces_to_fill = cols * rows - mines
         for i in range(rows):
             for j in range(cols):
                 for row, col in itertools.product([i - 1, i, i + 1],
@@ -213,17 +244,14 @@ class MinesweeperMasterSolver(JamSolver):
                     if self.count_cells(board, NOTHING) == spaces_to_fill:
                         break
                     self.set_board_status(board, row, col, NOTHING)
+        return board
 
-        if self.is_one_click_win_possible(board, cols, mines, rows):
-            return self.format_solution_board(board)
-
-        i = 1
-
-        # If that fails, try filling the board vertically.
+    def fill_board_vertically(self, rows, cols, mines):
         board = [list() for _ in xrange(rows)]
         for row in board:
             [row.append(MINE) for _ in range(cols)]
 
+        spaces_to_fill = cols * rows - mines
         for j in range(cols):
             for i in range(rows):
                 for row, col in itertools.product([i - 1, i, i + 1],
@@ -231,20 +259,21 @@ class MinesweeperMasterSolver(JamSolver):
                     if self.count_cells(board, NOTHING) == spaces_to_fill:
                         break
                     self.set_board_status(board, row, col, NOTHING)
+        return board
 
-        if self.is_one_click_win_possible(board, cols, mines, rows):
-            return self.format_solution_board(board)
-
-        i = 1
-
-        # If we don't win by that, try
+    def fill_board_expanding_from_bot_right(self, rows, cols, mines):
+        """
+        This method traverses the board from bot_right to top_left using diagonals.
+        For each position, it tries to use all the near cells so that they form 2x2 matrices
+        on corners, 3x3 matrices on inside positions and 3x2 or 2x3 on edges.
+        """
         board = [list() for _ in xrange(rows)]
         for row in board:
             [row.append(MINE) for _ in range(cols)]
 
         initial_row = rows
         initial_col = cols - 1
-
+        spaces_to_fill = cols * rows - mines
         while self.count_cells(board, NOTHING) != spaces_to_fill:
 
             if initial_row > 0:
@@ -254,8 +283,6 @@ class MinesweeperMasterSolver(JamSolver):
 
             row = initial_row
             col = initial_col
-
-            i = 1
 
             while row < rows and col >= 0:
 
@@ -267,54 +294,10 @@ class MinesweeperMasterSolver(JamSolver):
 
                 row += 1
                 col -= 1
-
-        if self.is_one_click_win_possible(board, cols, mines, rows):
-            return self.format_solution_board(board)
-        else:
-            return "\nImpossible"
-
-    def fill_board_with_mines(self, board, cols, mines, rows):
-        """
-        Puts mines starting from bottom-right to top-left.
-        """
-        planted_mines = 0
-        initial_row = rows
-        initial_col = cols - 1
-
-        row = rows - 1
-        col = cols
-
-        while planted_mines < mines:
-
-            # col -= 1
-            #
-            # if col < 0:
-            #     col = cols - 1
-            #     row -= 1
-            #
-            # board[row][col] = MINE
-            # planted_mines += 1
-
-            if initial_row > 0:
-                initial_row -= 1
-            else:
-                initial_col -= 1
-
-            row = initial_row
-            col = initial_col
-
-            while row < rows and col >= 0:
-                assert board[row][col] != MINE, \
-                    "Repetition - Tryed to put a mine in a cell in which a mine already existed."
-                board[row][col] = MINE
-                planted_mines += 1
-                row += 1
-                col -= 1
-                if planted_mines == mines:
-                    break
+        return board
 
     def is_one_click_win_possible(self, board, cols, mines, rows):
-        self.expand_board(board, cols, mines, rows)
+        self.expand_board(board, cols, rows)
 
         possible = True
 
@@ -327,7 +310,7 @@ class MinesweeperMasterSolver(JamSolver):
 
         return possible or only_one_space
 
-    def expand_board(self, board, cols, mines, rows):
+    def expand_board(self, board, cols, rows):
         for row in range(rows):
             for column in range(cols):
                 if not self.has_mine_nearby(board, row, column):
@@ -417,9 +400,6 @@ class MinesweeperTests(TestCase):
     def test_one_free_space(self):
         self.instance_test(2, 1, 1, True)
         self.instance_test(3, 1, 2, True)
-
-    # def test_5_5_14(self):
-    #     self.instance_test(5, 5, 14, True)
 
     def test_4_3_2(self):
         self.instance_test(4, 3, 2, True)

@@ -21,6 +21,9 @@ class {{ problem_class_name }}Parser(JamParser):
         """
         This method needs to fill the instances list.
         """
+        # self.data is a list of rows. every row is a row of the input file
+        # already split as str.
+        # use self.get_data_as_type() to parse it to a different type if needed.
         for row in self.data:
             pass
 
