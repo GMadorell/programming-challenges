@@ -99,7 +99,7 @@ import copy
 from jam_utils.jam_parser import JamParser
 from jam_utils.jam_solver import JamSolver
 
-PATH_DATA = "data.txt"
+PATH_DATA = "D-large-practice.in"
 PATH_OUTPUT = PATH_DATA.split(".")[0] + ".out"  # Same name as path data, except for the file format.
 
 
@@ -122,8 +122,8 @@ class DeceitfulWarParser(JamParser):
         for i in range(0, len(self.data), 3):
             instance = DeceitfulWarInstance()
             instance.amount_blocks = int(data[i][0])
-            instance.naomi = data[i + 1]
-            instance.ken = data[i + 2]
+            instance.naomi = sorted(data[i + 1], reverse=True)
+            instance.ken = sorted(data[i + 2], reverse=True)
             self.instances.append(instance)
 
 
@@ -131,14 +131,15 @@ class DeceitfulWarSolver(JamSolver):
 
     def solve_instance(self, instance):
         war_result = self.calculate_war_result(instance)
-        return "{0}".format(war_result)
+        deceitful_war_result = self.calculate_deceitful_war_result(instance)
+        return "{0} {1}".format(deceitful_war_result, war_result)
 
     def calculate_war_result(self, instance):
         # Strategy:
         #   Choose heaviest naomi block and then:
         #       - Choose max ken block if he can beat that score.
         #       - Choose min ken block if he cannot beat the score.
-        
+
         points = 0
         naomi = copy.copy(instance.naomi)
         ken = copy.copy(instance.ken)
@@ -155,6 +156,37 @@ class DeceitfulWarSolver(JamSolver):
                 points += 1
 
         return points
+
+    def calculate_deceitful_war_result(self, instance):
+        # Strategy:
+        #   Naomi always takes its lightest block.
+        #   - If lightest naomi is lighter than lightest ken:
+        #       Then Naomi tells that her block is just lighter than the heaviest Ken's block.
+        #       Ken then will choose its heaviest block to counter the choice.
+        #       Result: Ken wins, Ken heaviest block and Naomi lightest one get discarded.
+        #   - Else If lightest naomi is heavier than lightest ken:
+        #       Then Naomi tells that her block is heavier than the heaviest Ken's block.
+        #       In consequence, Ken chooses its lightest block because he can't win.
+        #       Result: Naomi wins, Ken and Naomi's lightest blocks get discarded.
+
+        points = 0
+        naomi = copy.copy(instance.naomi)
+        ken = copy.copy(instance.ken)
+
+        for i in range(instance.amount_blocks):
+            min_naomi = min(naomi)
+            min_ken = min(ken)
+
+            if min_naomi > min_ken:
+                naomi.remove(min_naomi)
+                ken.remove(min_ken)
+                points += 1
+            else:
+                ken.remove(max(ken))
+                naomi.remove(min_naomi)
+
+        return points
+
 
 
 if __name__ == "__main__":
