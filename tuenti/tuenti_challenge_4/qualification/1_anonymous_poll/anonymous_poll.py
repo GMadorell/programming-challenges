@@ -37,7 +37,7 @@ class AnonymousPollSolver(object):
         Where the magic happens.
         This method should return the solution (as a string) of the given instance.
         """
-        cursor = connection.cursor()
+        cursor = self.__connection.cursor()
 
         cursor.execute(
             """
