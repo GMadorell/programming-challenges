@@ -22,7 +22,7 @@ def create_tuenti_problem(directory_path, problem_name):
     render_template("tuenti/gitignore_template.txt", directory_path, ".gitignore")
     render_template("tuenti/challenge.token", directory_path, "challenge.token")
     render_template("tuenti/interpreter.txt", directory_path, "interpreter.txt")
-    render_template("tuenti/test_input.txt", directory_path, "tuenti/test_input.txt")
+    render_template("tuenti/test_input.txt", directory_path, "test_input.txt")
     render_template("tuenti/submit_challenge", directory_path, "submit_challenge")
     render_template("tuenti/test_challenge", directory_path, "test_challenge")
 
